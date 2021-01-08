@@ -90,10 +90,12 @@ class MongooseDbAdapter {
 					}).catch(reject);
 				}
 			} else if (this.schema) {
-				mongoose.createConnection(this.uri, this.opts).then(conn => {
+				const conn = mongoose.createConnection(this.uri, this.opts)
+				conn.once('connected', () => {
 					this.model = conn.model(this.modelName, this.schema);
 					resolve(conn);
-				}).catch(reject);
+				})
+				conn.once('error', reject)
 			}
 		}).then(conn => {
 			this.conn = conn;
