@@ -90,15 +90,17 @@ class MongooseDbAdapter {
 					}).catch(reject);
 				}
 			} else if (this.schema) {
-				const conn = mongoose.createConnection(this.uri, this.opts)
-				conn.once('connected', () => {
-					this.model = conn.model(this.modelName, this.schema);
-					resolve(conn);
-				})
-				conn.once('error', reject)
+				// note: do not use then/catch here, some case will trigger bluebird warning
+				// https://github.com/petkaantonov/bluebird/blob/master/docs/docs/warning-explanations.md#warning-a-promise-was-created-in-a-handler-but-was-not-returned-from-it
+				resolve(mongoose.createConnection(this.uri, this.opts));
 			}
 		}).then(conn => {
+			if (this.model == null && this.schema) {
+				// if service's schema only has schema field type, not model, init model and return connection
+				this.model = conn.model(this.modelName, this.schema);
+			}
 			this.conn = conn;
+
 
 			if (this.conn.constructor.name === "Db") {
 				return this.conn;
